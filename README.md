@@ -1,0 +1,56 @@
+# KyrgyzTestBot
+
+Telegram-бот: человек заполняет заявку (ФИО, ИНН, телефон, язык, город, даты, смена), бот следит за расписанием
+Кыргыз теста и записывает его, как только появляется свободное место. Работает через тот же API, что и мини-апп
+@kyrgyztest_support_bot.
+
+## Структура
+
+```
+src/KyrgyzTestBot
+├── Program.cs              хост, DI, конфигурация
+├── BotOptions.cs           настройки (секция Bot)
+├── Applicants/             заявка и её хранилище (data/applicants.json)
+├── KyrgyzTest/             клиент API Кыргызтеста и модели ответов
+├── Registration/           RegistrationWorker — опрос расписания и запись; SeatPicker — раздача мест
+└── Conversation/           BotWorker — long polling Telegram; ApplicationDialog — анкета
+tests/KyrgyzTestBot.Tests   тесты разбора ввода и раздачи мест
+```
+
+## Запуск из Rider
+
+1. Токен от @BotFather — в user-secrets:
+   ```
+   dotnet user-secrets set "Bot:Token" "<токен>" --project src/KyrgyzTestBot
+   ```
+2. Запустить профиль **KyrgyzTestBot**. Бот записывает по-настоящему, поэтому не держите его запущенным в Rider
+   одновременно с сервером.
+
+## Docker
+
+Рядом с `compose.yaml` создать `.env`:
+```
+BOT_TOKEN=<токен>
+```
+```
+docker compose up -d --build
+docker compose logs -f
+```
+
+## Настройки
+
+| Ключ                | Переменная окружения | По умолчанию          |
+|---------------------|----------------------|-----------------------|
+| `Bot:Token`         | `Bot__Token`         | —                     |
+| `Bot:MinCheckInterval` | `Bot__MinCheckInterval` | `00:03:00` — пауза между проверками случайная в диапазоне Min–Max |
+| `Bot:MaxCheckInterval` | `Bot__MaxCheckInterval` | `00:07:00`            |
+| `Bot:DataDirectory` | `Bot__DataDirectory` | `data` (в Docker `/data`) |
+
+## Что важно знать
+
+- У API нет авторизации, и он висит на временном тоннеле trycloudflare. Если запрос упал, клиент заново берёт адрес
+  из JS-бандла мини-аппа.
+- 409 от API — у человека уже есть активная запись. 400 — место успели занять или сервер не принял данные;
+  тексты ошибок сервера неизвестны, поэтому бот пересылает человеку ответ как есть (один раз).
+- Черновики анкет живут в памяти: после перезапуска незаконченную анкету надо начать заново. Принятые заявки
+  сохраняются в `applicants.json` и удаляются сразу после записи или `/cancel`.
