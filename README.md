@@ -38,6 +38,14 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
+Обновить сервер после push в `main`:
+```
+ssh root@209.38.251.34
+cd /root/kyrgyztest-bot && git pull && docker compose up -d --build && docker builder prune -af
+```
+Папку `/root/kyrgyztest-bot` не переименовывать: по её имени compose находит volume с заявками. `docker compose down -v`
+не запускать, он удалит заявки.
+
 ## Настройки
 
 | Ключ                | Переменная окружения | По умолчанию          |
