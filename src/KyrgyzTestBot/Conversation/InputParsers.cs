@@ -38,15 +38,15 @@ public static partial class InputParsers
         _ => null,
     };
 
-    /// <summary>Пустой список означает любую дату</summary>
-    public static IReadOnlyList<DateOnly>? Dates(string text)
+    /// <summary>Пустой список означает любую дату. Даты раньше <paramref name="firstDate"/> не принимает</summary>
+    public static IReadOnlyList<DateOnly>? Dates(string text, DateOnly firstDate)
     {
         if (text.Equals(Any, StringComparison.OrdinalIgnoreCase)) return [];
 
         var dates = new List<DateOnly>();
         foreach (var part in text.Split(DateSeparators, StringSplitOptions.RemoveEmptyEntries))
         {
-            if (!DateOnly.TryParseExact(part, DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            if (!DateOnly.TryParseExact(part, DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) || date < firstDate)
                 return null;
             dates.Add(date);
         }

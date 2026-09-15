@@ -1,5 +1,5 @@
 using KyrgyzTestBot.Applicants;
-using KyrgyzTestBot.KyrgyzTest;
+using KyrgyzTestBot.KyrgyzTestApi;
 
 namespace KyrgyzTestBot.Registration;
 
@@ -33,4 +33,7 @@ public sealed class SeatPicker(IEnumerable<ScheduleDay> schedule)
 
         return null;
     }
+
+    /// <summary>Возвращает место, на которое записать не вышло, чтобы его попробовал следующий в очереди</summary>
+    public void Release(Seat seat) => _takenBySchedule[seat.ScheduleId]--;
 }

@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using KyrgyzTestBot.Applicants;
-using KyrgyzTestBot.KyrgyzTest;
+using KyrgyzTestBot.KyrgyzTestApi;
+using KyrgyzTestBot.Registration;
 using Microsoft.Extensions.Options;
 
 namespace KyrgyzTestBot.Conversation;
@@ -63,7 +64,7 @@ public sealed class ApplicationDialog(ApplicantStore store, KyrgyzTestApiClient 
             DialogStep.City => TrySet(
                 draft.AvailableCities.FirstOrDefault(c => c.Name.Equals(text, StringComparison.OrdinalIgnoreCase)),
                 value => draft.City = value),
-            DialogStep.Dates => TrySet(InputParsers.Dates(text), value => draft.Dates = value),
+            DialogStep.Dates => TrySet(InputParsers.Dates(text, BookingCalendar.FirstDate(DateTime.UtcNow)), value => draft.Dates = value),
             DialogStep.Shifts => TrySet(InputParsers.Shifts(text), value => draft.Shifts = value),
             _ => throw new UnreachableException($"Неизвестный шаг {draft.Step}"),
         };
@@ -105,7 +106,10 @@ public sealed class ApplicationDialog(ApplicantStore store, KyrgyzTestApiClient 
                 draft.AvailableCities = (await api.GetCitiesAsync(ct)).Where(c => c.IsActive).ToList();
                 return new DialogReply("Город сдачи:", draft.AvailableCities.Select(c => c.Name).ToList());
             case DialogStep.Dates:
-                return new DialogReply("Даты через пробел, например: 21.09.2026 22.09.2026", [InputParsers.Any]);
+                var firstDate = BookingCalendar.FirstDate(DateTime.UtcNow);
+                return new DialogReply(
+                    $"Даты через пробел, не раньше {firstDate:dd.MM.yyyy}, например: {firstDate:dd.MM.yyyy} {firstDate.AddDays(1):dd.MM.yyyy}",
+                    [InputParsers.Any]);
             case DialogStep.Shifts:
                 return new DialogReply("Смена:", [ShiftExtensions.MorningTime, ShiftExtensions.AfternoonTime, InputParsers.Any]);
             case DialogStep.Confirm:

@@ -1,5 +1,5 @@
 using KyrgyzTestBot.Applicants;
-using KyrgyzTestBot.KyrgyzTest;
+using KyrgyzTestBot.KyrgyzTestApi;
 using KyrgyzTestBot.Registration;
 
 namespace KyrgyzTestBot.Tests;
@@ -27,6 +27,23 @@ public class SeatPickerTests
         Assert.NotNull(picker.TryTake(CreateApplicant(1, Bishkek)));
         Assert.Null(picker.TryTake(CreateApplicant(2, Bishkek)));
     }
+
+    [Fact]
+    public void ReleasedSeatGoesToNextApplicant()
+    {
+        var picker = new SeatPicker([Day(Bishkek, 21, morningFree: 1, afternoonFree: 0, morningId: 10)]);
+
+        var seat = picker.TryTake(CreateApplicant(1, Bishkek))!;
+        picker.Release(seat);
+
+        Assert.Equal(seat, picker.TryTake(CreateApplicant(2, Bishkek)));
+    }
+
+    [Theory]
+    [InlineData("2026-09-15T17:59:00Z", "2026-09-16")]
+    [InlineData("2026-09-15T18:00:00Z", "2026-09-17")]
+    public void FirstBookableDateIsTomorrowInKyrgyzstan(string utcNow, string expected) =>
+        Assert.Equal(DateOnly.Parse(expected), BookingCalendar.FirstDate(DateTime.Parse(utcNow).ToUniversalTime()));
 
     [Fact]
     public void RespectsCityDatesAndShifts()

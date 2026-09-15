@@ -11,10 +11,11 @@ src/KyrgyzTestBot
 ├── Program.cs              хост, DI, конфигурация
 ├── BotOptions.cs           настройки (секция Bot)
 ├── Applicants/             заявка и её хранилище (data/applicants.json)
-├── KyrgyzTest/             клиент API Кыргызтеста и модели ответов
-├── Registration/           RegistrationWorker — опрос расписания и запись; SeatPicker — раздача мест
-└── Conversation/           BotWorker — long polling Telegram; ApplicationDialog — анкета
-tests/KyrgyzTestBot.Tests   тесты разбора ввода и раздачи мест
+├── KyrgyzTestApi/          клиент API Кыргызтеста и модели ответов
+├── Registration/           RegistrationWorker — опрос расписания и запись; SeatPicker — раздача мест;
+│                           BookingCalendar — с какой даты записываем
+└── Conversation/           TelegramPollingWorker — long polling Telegram; ApplicationDialog — анкета
+tests/KyrgyzTestBot.Tests   тесты разбора ввода, раздачи мест и календаря
 ```
 
 ## Запуск из Rider
@@ -52,5 +53,8 @@ docker compose logs -f
   из JS-бандла мини-аппа.
 - 409 от API — у человека уже есть активная запись. 400 — место успели занять или сервер не принял данные;
   тексты ошибок сервера неизвестны, поэтому бот пересылает человеку ответ как есть (один раз).
+- Если записать на место не вышло (409, 400, таймаут), в том же цикле его пробует следующий в очереди.
+- Записываем не раньше завтрашнего дня по времени Кыргызстана. Заявку, у которой все даты прошли, бот удаляет
+  и пишет человеку.
 - Черновики анкет живут в памяти: после перезапуска незаконченную анкету надо начать заново. Принятые заявки
   сохраняются в `applicants.json` и удаляются сразу после записи или `/cancel`.

@@ -34,20 +34,24 @@ public class InputParsersTests
         Assert.Null(InputParsers.FullName("Асан"));
     }
 
+    private static readonly DateOnly FirstDate = new(2026, 9, 16);
+
     [Fact]
-    public void Dates_ParsesBothFormats() =>
-        Assert.Equal(new[] { new DateOnly(2026, 9, 21), new DateOnly(2026, 9, 22) }, InputParsers.Dates("21.09.2026, 2026-09-22"));
+    public void Dates_ParsesBothFormatsFromFirstDate() =>
+        Assert.Equal(new[] { new DateOnly(2026, 9, 16), new DateOnly(2026, 9, 22) }, InputParsers.Dates("16.09.2026, 2026-09-22", FirstDate));
 
     [Fact]
     public void Dates_AnyMeansEmptyList() =>
-        Assert.Empty(InputParsers.Dates(InputParsers.Any)!);
+        Assert.Empty(InputParsers.Dates(InputParsers.Any, FirstDate)!);
 
     [Theory]
     [InlineData("завтра")]
     [InlineData("31.02.2026")]
     [InlineData("21.09.2026 потом")]
-    public void Dates_RejectsInvalid(string input) =>
-        Assert.Null(InputParsers.Dates(input));
+    [InlineData("15.09.2026")]
+    [InlineData("21.09.2026 15.09.2026")]
+    public void Dates_RejectsInvalidAndEarlierThanFirstDate(string input) =>
+        Assert.Null(InputParsers.Dates(input, FirstDate));
 
     [Fact]
     public void Shifts_MapsButtons()

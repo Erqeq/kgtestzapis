@@ -6,6 +6,10 @@ services:
       Bot__Token: ${BOT_TOKEN:?BOT_TOKEN не задан в .env}
     volumes:
       - bot-data:/data
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
 
 volumes:
   bot-data:

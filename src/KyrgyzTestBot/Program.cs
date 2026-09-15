@@ -2,7 +2,7 @@ using System.Text;
 using KyrgyzTestBot;
 using KyrgyzTestBot.Applicants;
 using KyrgyzTestBot.Conversation;
-using KyrgyzTestBot.KyrgyzTest;
+using KyrgyzTestBot.KyrgyzTestApi;
 using KyrgyzTestBot.Registration;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
@@ -26,7 +26,7 @@ builder.Services.AddSingleton<ITelegramBotClient>(sp =>
 builder.Services.AddSingleton<ApplicantStore>();
 builder.Services.AddSingleton<ApplicationDialog>();
 
-builder.Services.AddHostedService<BotWorker>();
+builder.Services.AddHostedService<TelegramPollingWorker>();
 builder.Services.AddHostedService<RegistrationWorker>();
 
 builder.Build().Run();

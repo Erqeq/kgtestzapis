@@ -1,5 +1,5 @@
 using KyrgyzTestBot.Applicants;
-using KyrgyzTestBot.KyrgyzTest;
+using KyrgyzTestBot.KyrgyzTestApi;
 
 namespace KyrgyzTestBot.Conversation;
 
