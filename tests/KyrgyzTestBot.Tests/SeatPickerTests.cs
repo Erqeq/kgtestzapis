@@ -8,11 +8,12 @@ public class SeatPickerTests
 {
     private static readonly City Bishkek = new(1, "Бишкек", true);
     private static readonly City Manas = new(4, "Манас (Жалал-Абад)", true);
+    private static readonly DateOnly FirstDate = new(2026, 9, 21);
 
     [Fact]
     public void TakesEarliestDateAndShiftsInPriorityOrder()
     {
-        var picker = new SeatPicker([Day(Bishkek, 22, morningFree: 5, afternoonFree: 5, morningId: 20), Day(Bishkek, 21, morningFree: 0, afternoonFree: 3, morningId: 10)]);
+        var picker = Picker(Day(Bishkek, 22, morningFree: 5, afternoonFree: 5, morningId: 20), Day(Bishkek, 21, morningFree: 0, afternoonFree: 3, morningId: 10));
 
         var seat = picker.TryTake(CreateApplicant(1, Bishkek));
 
@@ -22,7 +23,7 @@ public class SeatPickerTests
     [Fact]
     public void DoesNotGiveTheSameSeatTwice()
     {
-        var picker = new SeatPicker([Day(Bishkek, 21, morningFree: 1, afternoonFree: 0, morningId: 10)]);
+        var picker = Picker(Day(Bishkek, 21, morningFree: 1, afternoonFree: 0, morningId: 10));
 
         Assert.NotNull(picker.TryTake(CreateApplicant(1, Bishkek)));
         Assert.Null(picker.TryTake(CreateApplicant(2, Bishkek)));
@@ -31,12 +32,22 @@ public class SeatPickerTests
     [Fact]
     public void ReleasedSeatGoesToNextApplicant()
     {
-        var picker = new SeatPicker([Day(Bishkek, 21, morningFree: 1, afternoonFree: 0, morningId: 10)]);
+        var picker = Picker(Day(Bishkek, 21, morningFree: 1, afternoonFree: 0, morningId: 10));
 
         var seat = picker.TryTake(CreateApplicant(1, Bishkek))!;
         picker.Release(seat);
 
         Assert.Equal(seat, picker.TryTake(CreateApplicant(2, Bishkek)));
+    }
+
+    /// <summary>API отдаёт расписание с сегодняшнего дня, даже если просить более позднюю дату</summary>
+    [Fact]
+    public void SkipsDaysBeforeFirstDate()
+    {
+        var picker = Picker(Day(Bishkek, 20, morningFree: 5, afternoonFree: 5, morningId: 10), Day(Bishkek, 21, morningFree: 5, afternoonFree: 5, morningId: 20));
+
+        Assert.Equal(new DateOnly(2026, 9, 21), picker.TryTake(CreateApplicant(1, Bishkek))?.Date);
+        Assert.Null(picker.TryTake(CreateApplicant(2, Bishkek, dates: [new DateOnly(2026, 9, 20)])));
     }
 
     [Theory]
@@ -48,11 +59,13 @@ public class SeatPickerTests
     [Fact]
     public void RespectsCityDatesAndShifts()
     {
-        var picker = new SeatPicker([Day(Bishkek, 21, 5, 5, morningId: 10), Day(Manas, 22, 5, 5, morningId: 20)]);
+        var picker = Picker(Day(Bishkek, 21, 5, 5, morningId: 10), Day(Manas, 22, 5, 5, morningId: 20));
 
         Assert.Null(picker.TryTake(CreateApplicant(1, Manas, dates: [new DateOnly(2026, 9, 21)])));
         Assert.Equal(21, picker.TryTake(CreateApplicant(2, Manas, shifts: [Shift.Afternoon]))?.ScheduleId);
     }
+
+    private static SeatPicker Picker(params ScheduleDay[] days) => new(days, FirstDate);
 
     private static ScheduleDay Day(City city, int day, long morningFree, long afternoonFree, long morningId) =>
         new(city, new DateOnly(2026, 9, day), new ShiftValues(morningFree, afternoonFree), new ShiftValues(morningId, morningId + 1));

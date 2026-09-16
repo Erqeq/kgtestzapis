@@ -59,7 +59,7 @@ public sealed class RegistrationWorker(
         foreach (var cityId in queue.Select(a => a.CityId).Distinct())
             schedule.AddRange(await api.GetScheduleAsync(cityId, firstDate, ct));
 
-        var picker = new SeatPicker(schedule);
+        var picker = new SeatPicker(schedule, firstDate);
         foreach (var applicant in queue)
         {
             if (picker.TryTake(applicant) is not { } seat) continue;

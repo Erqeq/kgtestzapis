@@ -6,9 +6,10 @@ namespace KyrgyzTestBot.Registration;
 /// <summary>
 /// Раздаёт свободные места из одного снимка расписания и не выдаёт одно место двоим, пока расписание не перечитано
 /// </summary>
-public sealed class SeatPicker(IEnumerable<ScheduleDay> schedule)
+public sealed class SeatPicker(IEnumerable<ScheduleDay> schedule, DateOnly firstDate)
 {
-    private readonly List<ScheduleDay> _days = schedule.OrderBy(d => d.Date).ToList();
+    // Даты отсеиваем сами: date__gte в запросе расписания API игнорирует и всё равно отдаёт сегодняшний день
+    private readonly List<ScheduleDay> _days = schedule.Where(d => d.Date >= firstDate).OrderBy(d => d.Date).ToList();
     private readonly Dictionary<long, long> _takenBySchedule = new();
 
     /// <summary>Самая ранняя подходящая дата, смены в порядке приоритета заявки</summary>
